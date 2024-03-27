@@ -4,6 +4,7 @@ import ctypes
 import instance
 import logging
 import device
+import surface
 class Engine:
     def __init__(self) -> None:
         self.debugMode = True
@@ -17,6 +18,7 @@ class Engine:
         self.build_window()
         self.make_instance()
         self.make_debug_messenger()
+        self.make_surface()
         self.make_device()
 
     def make_debug_messenger(self):
@@ -65,16 +67,22 @@ class Engine:
         extensions = self.get_desired_extensions()
         self.instance = instance.make_instance('Foo', extensions, self.debugMode)
 
+    def make_surface(self):
+        self.surface = surface.get_surface(self.instance, self.wm_info, self.debugMode)
+
     def make_device(self):
         self.physical_device = device.choose_physical_device(self.instance, self.debugMode)
-        self.device = device.create_logical_device(self.physical_device, self.debugMode)
-        self.graphics_queue = device.get_graphics_queue(self.physical_device, self.device, self.debugMode)
+        self.device = device.create_logical_device(self.physical_device, self.instance, self.surface, self.debugMode)
+        (self.graphics_queue, self.present_queue) = device.get_queues(self.physical_device, self.device, self.instance, self.surface, self.debugMode)
 
     def close(self):
         if self.debugMode:
             print('Closing graphics engine')
 
-        vkDestroyDevice(self.logical_device, None)
+        vkDestroyDevice(self.device, None)
+
+        surface_destroy_function = vkGetInstanceProcAddr(self.instance, 'vkDestroySurfaceKHR')
+        surface_destroy_function(self.instance, self.surface, None)
 
         if self.debug_messenger:
             destroyFunction = vkGetInstanceProcAddr(self.instance, 'vkDestroyDebugReportCallbackEXT')

@@ -51,8 +51,10 @@ def log_device_properties(device):
     else:
         print("Device type: Unknown")
 
-def find_queue_families(device, debug):
+def find_queue_families(device, instance, surface, debug):
     indices = QueueFamilyIndices()
+
+    surface_support = vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceSupportKHR")
 
     queue_families = vkGetPhysicalDeviceQueueFamilyProperties(device)
 
@@ -62,37 +64,54 @@ def find_queue_families(device, debug):
     for i, queue_family in enumerate(queue_families):
         if queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT:
             indices.graphics_queue_family = i
-            indices.present_queue_family = i
-
             if debug:
-                print(f"Found graphics queue family: {i}")
+                print(f"Using graphics queue family {i}")
+
+
+        if surface_support(device, i, surface):
+            indices.present_queue_family = i
+            if debug:
+                print(f"Using present queue family {i}")
 
         if indices.is_complete():
             break
 
     return indices
 
-def create_logical_device(physicalDevice, debug):
-    indices = find_queue_families(physicalDevice, debug)
+def create_logical_device(physicalDevice, instance, surface, debug):
+    indices = find_queue_families(physicalDevice, instance, surface, debug)
+    unique_indices = [indices.graphics_queue_family]
+    if indices.present_queue_family not in unique_indices:
+        unique_indices.append(indices.present_queue_family)
 
-    queueCreateInfo = VkDeviceQueueCreateInfo(
-        queueFamilyIndex=indices.graphics_queue_family,
-        queueCount=1,
-        pQueuePriorities=[1.0]
-    )
+
+    queueCreateInfos = []
+
+    for index in unique_indices:
+        queueCreateInfo = VkDeviceQueueCreateInfo(
+            sType=VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            queueFamilyIndex=index,
+            queueCount=1,
+            pQueuePriorities=[1.0]
+        )
+
+        queueCreateInfos.append(queueCreateInfo)
 
     deviceFeatures = VkPhysicalDeviceFeatures()
 
     deviceCreateInfo = VkDeviceCreateInfo(
         sType=VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        queueCreateInfoCount=1,
-        pQueueCreateInfos=[queueCreateInfo],
+        queueCreateInfoCount=len(queueCreateInfos),
+        pQueueCreateInfos=queueCreateInfos,
         pEnabledFeatures=[deviceFeatures]
     )
 
     return vkCreateDevice(physicalDevice, deviceCreateInfo, None)
 
-def get_graphics_queue(physicalDevice, device, debug):
-    indices = find_queue_families(physicalDevice, debug)
+def get_queues(physicalDevice, device, instance, surface, debug):
+    indices = find_queue_families(physicalDevice, instance, surface, debug)
 
-    return vkGetDeviceQueue(device, indices.graphics_queue_family, 0)
+    return [
+        vkGetDeviceQueue(device, indices.graphics_queue_family, 0),
+        vkGetDeviceQueue(device, indices.present_queue_family, 0)
+    ]
