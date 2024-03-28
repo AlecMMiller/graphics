@@ -5,6 +5,8 @@ import instance
 import logging
 import device
 import surface
+import queue
+import swapchain
 class Engine:
     def __init__(self) -> None:
         self.debugMode = True
@@ -73,8 +75,8 @@ class Engine:
     def make_device(self):
         self.physical_device = device.choose_physical_device(self.instance, self.debugMode)
         self.device = device.create_logical_device(self.physical_device, self.instance, self.surface, self.debugMode)
-        (self.graphics_queue, self.present_queue) = device.get_queues(self.physical_device, self.device, self.instance, self.surface, self.debugMode)
-        bundle = device.create_swapchain(self.instance, self.physical_device, self.device, self.surface, self.width, self.height, self.debugMode)
+        (self.graphics_queue, self.present_queue) = queue.get_queues(self.physical_device, self.device, self.instance, self.surface, self.debugMode)
+        bundle = swapchain.create_swapchain(self.instance, self.physical_device, self.device, self.surface, self.width, self.height, self.debugMode)
         self.swapchain = bundle.swapchain
         self.swapchain_images = bundle.images
         self.format = bundle.format
