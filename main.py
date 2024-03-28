@@ -78,13 +78,16 @@ class Engine:
         (self.graphics_queue, self.present_queue) = queue_families.get_queues(self.physical_device, self.device, self.instance, self.surface, self.debugMode)
         bundle = swapchain.create_swapchain(self.instance, self.physical_device, self.device, self.surface, self.width, self.height, self.debugMode)
         self.swapchain = bundle.swapchain
-        self.swapchain_images = bundle.images
+        self.swapchain_frames = bundle.frames
         self.format = bundle.format
         self.extent = bundle.extent
 
     def close(self):
         if self.debugMode:
             print('Closing graphics engine')
+
+        for frame in self.swapchain_frames:
+            vkDestroyImageView(self.device, frame.image_view, None)
 
         swapchain_destroy_function = vkGetInstanceProcAddr(self.instance, 'vkDestroySwapchainKHR')
         swapchain_destroy_function(self.device, self.swapchain, None)

@@ -1,5 +1,6 @@
 from vulkan import *
 import queue_families
+import frame
 
 class SwapChainSupportDetails:
     def __init__(self) -> None:
@@ -10,7 +11,7 @@ class SwapChainSupportDetails:
 class SwapChainBundle:
     def __init__(self) -> None:
         self.swapchain = None
-        self.images = None
+        self.frames = []
         self.format = None
         self.extent = None
 
@@ -57,7 +58,36 @@ def create_swapchain(instance, physicalDevice, logicalDevice, surface, width, he
     vkSwapchainKHR = vkGetDeviceProcAddr(logicalDevice, "vkCreateSwapchainKHR")
     bundle.swapchain = vkSwapchainKHR(logicalDevice, create_info, None)
     vkGetSwapchainImagesKHR = vkGetDeviceProcAddr(logicalDevice, "vkGetSwapchainImagesKHR")
-    bundle.images = vkGetSwapchainImagesKHR(logicalDevice, bundle.swapchain)
+    
+    images = vkGetSwapchainImagesKHR(logicalDevice, bundle.swapchain)
+    for image in images:
+        components = VkComponentMapping(
+            r=VK_COMPONENT_SWIZZLE_IDENTITY,
+            g=VK_COMPONENT_SWIZZLE_IDENTITY,
+            b=VK_COMPONENT_SWIZZLE_IDENTITY,
+            a=VK_COMPONENT_SWIZZLE_IDENTITY
+        )
+
+        subresourceRange = VkImageSubresourceRange(
+            aspectMask=VK_IMAGE_ASPECT_COLOR_BIT,
+            baseMipLevel=0,
+            levelCount=1,
+            baseArrayLayer=0,
+            layerCount=1
+        )
+
+        create_info = VkImageViewCreateInfo(
+            image=image,
+            viewType=VK_IMAGE_VIEW_TYPE_2D,
+            format=format.format,
+            components=components,
+            subresourceRange=subresourceRange
+        )
+
+        swapchain_frame = frame.SwapchainFrame()
+        swapchain_frame.image = image
+        swapchain_frame.image_view = vkCreateImageView(logicalDevice, create_info, None)
+        bundle.frames.append(swapchain_frame)
 
     bundle.format = format.format
     bundle.extent = extent
