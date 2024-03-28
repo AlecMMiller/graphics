@@ -74,6 +74,11 @@ class Engine:
         self.physical_device = device.choose_physical_device(self.instance, self.debugMode)
         self.device = device.create_logical_device(self.physical_device, self.instance, self.surface, self.debugMode)
         (self.graphics_queue, self.present_queue) = device.get_queues(self.physical_device, self.device, self.instance, self.surface, self.debugMode)
+        bundle = device.create_swapchain(self.instance, self.physical_device, self.device, self.surface, self.width, self.height, self.debugMode)
+        self.swapchain = bundle.swapchain
+        self.swapchain_images = bundle.images
+        self.format = bundle.format
+        self.extent = bundle.extent
 
     def close(self):
         if self.debugMode:
