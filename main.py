@@ -84,6 +84,9 @@ class Engine:
         if self.debugMode:
             print('Closing graphics engine')
 
+        swapchain_destroy_function = vkGetInstanceProcAddr(self.instance, 'vkDestroySwapchainKHR')
+        swapchain_destroy_function(self.device, self.swapchain, None)
+
         vkDestroyDevice(self.device, None)
 
         surface_destroy_function = vkGetInstanceProcAddr(self.instance, 'vkDestroySurfaceKHR')
