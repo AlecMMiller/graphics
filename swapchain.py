@@ -1,5 +1,5 @@
 from vulkan import *
-import queue
+import queue_families
 
 class SwapChainSupportDetails:
     def __init__(self) -> None:
@@ -23,7 +23,7 @@ def create_swapchain(instance, physicalDevice, logicalDevice, surface, width, he
     if support.capabilities.maxImageCount > 0 and image_count > support.capabilities.maxImageCount:
         image_count = support.capabilities.maxImageCount
 
-    indices = queue.find_queue_families(physicalDevice, instance, surface, debug)
+    indices = queue_families.find_queue_families(physicalDevice, instance, surface, debug)
 
     if indices.graphics_queue_family != indices.present_queue_family:
         imageSharingMode = VK_SHARING_MODE_CONCURRENT

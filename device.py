@@ -1,5 +1,5 @@
 from vulkan import *
-import queue
+import queue_families
 
 def is_suitable_device(device, debug_mode):
     requested_extensions = [VK_KHR_SWAPCHAIN_EXTENSION_NAME]
@@ -45,7 +45,7 @@ def log_device_properties(device):
         print("Device type: Unknown")
 
 def create_logical_device(physicalDevice, instance, surface, debug):
-    indices = queue.find_queue_families(physicalDevice, instance, surface, debug)
+    indices = queue_families.find_queue_families(physicalDevice, instance, surface, debug)
     unique_indices = [indices.graphics_queue_family]
     if indices.present_queue_family not in unique_indices:
         unique_indices.append(indices.present_queue_family)
